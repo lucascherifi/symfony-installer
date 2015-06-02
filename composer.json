@@ -10,7 +10,7 @@
         }
     ],
     "autoload": {
-        "psr-4": { "Symfony\\": "src/Symfony/" }
+        "psr-4": { "Symfony\\": "src/Symfony/", "Kasifi\\": "src/Kasifi/" }
     },
     "require": {
         "php": ">=5.4.0",
