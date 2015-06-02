@@ -1,0 +1,13 @@
+---
+
+- hosts: vm
+  gather_facts: true
+  vars:
+    domain: local.%SLUG%
+    hostname: %SLUG%-vagrant
+    db_name: %SLUG%
+  vars_files:
+    - vars/local.yml
+
+  roles:
+    - project

@@ -1,0 +1,92 @@
+# Set a custom hostname
+
+- name: hostname | update
+  sudo: yes
+  hostname: name={{hostname}}
+
+# Set a custom motd
+
+- name: motd | add ascii art
+  sudo: yes
+  template: src=motd.static.j2 dest=/etc/motd owner=root group=root mode=0644
+
+# Update /etc/hosts file
+
+- name: system | update /etc/hosts file
+  sudo: yes
+  lineinfile: "dest=/etc/hosts regexp='{{domain}}' line='127.0.0.1 {{domain}}'"
+
+# Set the PhpMyAdmin domain
+
+- name: PhpMyAdmin | set vhost
+  sudo: yes
+  lineinfile: "dest=/etc/nginx/sites-enabled/nginx-pma.conf state=present regexp='server_name pma' line='        server_name pma.{{domain}};' backrefs=true"
+  notify: restart nginx
+
+# move "higth R/W" directories to RAM filesystem
+
+- name: ram | move "cache" directory to ram (part1)
+  file: path=/dev/shm/project/cache state=directory # owner={{ansible_env.USER}} group={{ansible_env.USER}}
+
+- name: ram | move "cache" directory to ram (part2)
+  file: src=/dev/shm/project/cache dest=/var/www/app/cache state=link force=yes #owner={{ansible_env.USER}} group={{ansible_env.USER}}
+
+- name: ram | move "logs" directory to ram (part1)
+  file: path=/dev/shm/project/logs state=directory # owner={{ansible_env.USER}} group={{ansible_env.USER}}
+
+- name: ram | move "logs" directory to ram (part2)
+  file: src=/dev/shm/project/logs dest=/var/www/app/logs state=link force=yes # owner={{ansible_env.USER}} group={{ansible_env.USER}}
+
+- name: ram | move ".sass_cache" directory to ram (part1)
+  file: path=/dev/shm/project/.sass_cache state=directory # owner={{ansible_env.USER}} group={{ansible_env.USER}}
+
+- name: ram | move ".sass_cache" directory to ram (part2)
+  file: src=/dev/shm/project/.sass_cache dest=/var/www/.sass_cache state=link force=yes # owner={{ansible_env.USER}} group={{ansible_env.USER}}
+
+# Install Composer and vendors
+
+- name: composer | install globally
+  sudo: yes
+  shell: curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer creates=/usr/local/bin/composer
+
+- name: composer | setting github oauth token
+  shell: composer config -g github-oauth.github.com {{github_oauth_token}}
+
+- name: symfony | composer install
+  command: composer install --no-interaction chdir=/var/www/
+
+# Init DB, users, schema and fixtures
+
+- name: db | create databases
+  sudo: yes
+  mysql_db: name={{db_name}} state=present login_user=root login_password=""
+
+- name: db | create users
+  sudo: yes
+  mysql_user: name={{db_name}} password={{db_name}} priv={{db_name}}.*:ALL state=present host=% login_user=root login_password=""
+
+- name: db | build schema
+  command: php app/console doctrine:schema:update --force --no-interaction chdir=/var/www/
+
+#- name: db | load fixtures
+#  command: php app/console doctrine:fixtures:load -n --no-interaction chdir=/var/www/
+
+# Bundler
+
+#- name: bundler | install
+#  command: bundle install chdir=/var/www/
+#
+#- name: compass compile
+#  command: compass compile chdir=/var/www/ # @todo use be instead
+
+# Configure Nginx
+
+- name: nginx | init conf
+  sudo: yes
+  template: src=project.conf dest=/etc/nginx/sites-available/{{domain}}.conf
+  notify: restart nginx
+
+- name: nginx | create symlinks in sites-enabled
+  sudo: yes
+  file: src=/etc/nginx/sites-available/{{domain}}.conf dest=/etc/nginx/sites-enabled/{{domain}}.conf state=link
+  notify: restart nginx

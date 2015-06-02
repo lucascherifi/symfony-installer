@@ -1,0 +1,5 @@
+---
+
+# please change this value, @see => https://help.github.com/articles/creating-an-access-token-for-command-line-use
+
+github_oauth_token: '%GITHUB_AUTH_TOKEN%'
