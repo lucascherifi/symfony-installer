@@ -5,6 +5,7 @@
             "name": "*.php",
             "exclude": [
                 ".gitignore",
+                ".idea",
                 ".md",
                 "phpunit",
                 "Tester",
@@ -22,7 +23,7 @@
     "compression": "GZ",
     "git-version": "package_version",
     "main": "symfony",
-    "output": "symfony.phar",
+    "output": "symfony-vagrant.phar",
     "stub": true,
     "chmod": "0755"
 }
