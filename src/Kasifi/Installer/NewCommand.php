@@ -53,6 +53,7 @@ class NewCommand extends \Symfony\Installer\NewCommand
             $this
                 ->copyFiles()
                 ->customizeFiles()
+                ->removeCacheAndLogDirectories()
             ;
         } catch (AbortException $e) {
             aborted:
@@ -72,6 +73,34 @@ class NewCommand extends \Symfony\Installer\NewCommand
             $this->cleanUp();
             throw $e;
         }
+    }
+
+    /**
+     * It displays the message with the result of installing Symfony
+     * and provides some pointers to the user.
+     *
+     * @return NewCommand
+     */
+    protected function displayInstallationResult()
+    {
+        parent::displayInstallationResult();
+
+        if (empty($this->requirementsErrors)) {
+            $this->output->writeln(" <info>Vagrant/Ansible</info> was <info>successfully installed</info>. Now you can:\n");
+
+            $vmIp = $this->vmIp;
+            $slug = $this->projectName;
+            $projectDir = $this->projectDir;
+
+            $this->output->writeln("        1. Add to the <comment>/etc/hosts</comment> file on your host the following line\n");
+            $this->output->writeln("              <comment>$vmIp local.$slug pma.local.$slug</comment>\n");
+            $this->output->writeln("        2. Execute the <comment>cd $projectDir && vagrant up</comment> command.\n");
+            $this->output->writeln("        3. View PMA: <comment>open http://pma.local.$slug</comment> (\"root\"/\"\")\n");
+            $this->output->writeln("        4. View the project: <comment>open http://local.$slug/app_dev.php/app/example</comment>\n");
+            $this->output->writeln("        5. Destroy the VM: <comment>cd $projectDir && vagrant destroy</comment>\n");
+        }
+
+        return $this;
     }
 
     protected function getDataSourcePath() {
@@ -109,6 +138,9 @@ class NewCommand extends \Symfony\Installer\NewCommand
                 '%IP%' => $this->vmIp,
                 '%SLUG%' => $this->projectName,
                 '%RAM_SIZE%' => $this->ramSize,
+            ],
+            'web/app_dev.php' => [
+                '127.0.0.1' => '127.0.0.1\', \'192.168.33.1',
             ],
         ];
 
@@ -161,5 +193,11 @@ class NewCommand extends \Symfony\Installer\NewCommand
         $token = $json['github-oauth']['github.com'];
 
         return $token;
+    }
+
+    protected function removeCacheAndLogDirectories()
+    {
+        $this->fs->remove($this->projectDir.DIRECTORY_SEPARATOR.'app/cache');
+        $this->fs->remove($this->projectDir.DIRECTORY_SEPARATOR.'app/logs');
     }
 }
