@@ -29,7 +29,7 @@ $app = new Symfony\Component\Console\Application('Symfony Installer', $appVersio
 $app->add(new Kasifi\Installer\AboutCommand($appVersion));
 $app->add(new Kasifi\Installer\NewCommand());
 $app->add(new Symfony\Installer\DemoCommand());
-$app->add(new Symfony\Installer\SelfUpdateCommand());
+$app->add(new Kasifi\Installer\SelfUpdateCommand());
 
 $app->setDefaultCommand('about');
 
